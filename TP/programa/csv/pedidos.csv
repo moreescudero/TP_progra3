@@ -1,4 +1,10 @@
 id,producto,precio,cantidad,codigoMesa,codigoPedido,estado
-2,ipa,900,2,06oM5,zh8eC,Cobrado
+2,ipa,900,2,06oM5,zh8eC,"Listo para servir"
 3,ipa,900,2,06oM5,o1kYw,Cobrado
 4,ipa,900,2,06oM5,aOFxm,Cobrado
+5,"empanada de carne",500,2,4TMiy,ZhpOP,Cobrado
+6,"empanada de carne",500,2,4TMiy,LqIHv,Cobrado
+7,"empanada de carne",500,2,4TMiy,dt2SF,Cobrado
+8,"empanada de carne",500,2,4TMiy,0CMo5,Cobrado
+9,"empanada de carne",500,2,4TMiy,F5oxJ,Cobrado
+10,"empanada de carne",500,2,4TMiy,qPBSp,Cobrado
