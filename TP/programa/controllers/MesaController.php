@@ -5,7 +5,7 @@ require_once './interfaces/ApiInterface.php';
 class MesaController implements ApiInterface{
 
     public function TraerTodos($request, $response, $args)
-    {
+    {   
         $array= Mesa::TraerMesas();
 
         $retorno= json_encode(array("Mesas " => $array));
@@ -21,7 +21,7 @@ class MesaController implements ApiInterface{
         
         if(Mesa::ComprobarCodigo($codigo))
         {
-            $mesa = new Mesa($codigo, "Libre");
+            $mesa = new Mesa($codigo, "Vacia");
             $mesa->CargarMesa();
             $retorno= json_encode(array('Mesa cargada' => $mesa->codigo));
         }
@@ -33,14 +33,25 @@ class MesaController implements ApiInterface{
     }
 
     public function Actualizar($request, $response, $args){
-        $parametro= $request->getParsedBody();
-        
-        if(Mesa::ActualizarMesa($parametro['idMesa']))
+        $args = $request->getQueryParams();
+
+        if(Mesa::ActualizarMesa($args['idMesa']))
         {
             $response->getBody()->write("Se actualizo el pedido");
         }
         else $response->getBody()->write("Algun pedido esta sin hacer ");
         
+        return $response;
+    }
+
+    public function CerrarMesa($request, $response, $args)
+    {
+        $parametros = $request->getParsedBody();
+        if(Mesa::CerrarMesa($parametros['idMesa']))
+        {
+            $response->getBody()->write("Se cerro la mesa");
+        } 
+        else $response->getBody()->write("La mesa aun no ha pagado");
         return $response;
     }
 }

@@ -73,7 +73,7 @@ class Logger
 			$payload=Autenticador::ObtenerData($token);
 			switch($seccion)	{
 				case 'mesa':
-					if($payload->perfil=="socio" || $payload->perfil == "mozo")
+					if($payload->perfil=="socio" || $payload->perfil == "mesero")
 					{
 						$response = $handler->handle($request);
 					}		           	

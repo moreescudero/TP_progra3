@@ -17,6 +17,7 @@ require_once './controllers/UsuarioController.php';
 require_once './controllers/ProductoController.php';
 require_once './controllers/MesaController.php';
 require_once './controllers/PedidoController.php';
+require_once './controllers/EncuestaController.php';
 require_once './middlewares/Logger.php';
 require_once './controllers/GuardarController.php';
 
@@ -44,16 +45,20 @@ $app->group('/productos', function (RouteCollectorProxy $group){
 $app->group('/mesas', function (RouteCollectorProxy $group){
   $group->get('[/]', \MesaController::class . ':TraerTodos');
   $group->post('[/]', \MesaController::class . ':CargarUno');
-  $group->post('/actualizar', \MesaController::class . ':Actualizar');
+  $group->post('/cerrar', \MesaController::class . ':CerrarMesa');
+  $group->get('/actualizar', \MesaController::class . ':Actualizar');
 })->add(\Logger::class . ':VerificarToken');
 
 $app->group('/pedidos', function (RouteCollectorProxy $group){
-  $group->post('[/]', \PedidoController::class . ':CargarUno')->add(\PedidoController::class . ':VerificarStock');
+  $group->post('/cargar', \PedidoController::class . ':CargarUno')->add(\PedidoController::class . ':VerificarStock');
   $group->post('/cobrar', \PedidoController::class . ':Cobrar');
-  $group->get('/{idPedido}/{idMesa}', \PedidoController::class . ':TraerFiltrado');
-  $group->get('/{id}', \PedidoController::class . ':TraerFiltrado');
-  $group->get('[/]', \PedidoController::class . ':TraerTodos');
-  $group->post('/modificar', \PedidoController::class . ':AtenderPedido');
+  $group->post('/atender', \PedidoController::class . ':AtenderPedido');
+});
+
+$app->group('/filtrar', function (RouteCollectorProxy $group){
+  $group->get('/encuesta/', \PedidoController::class . ':TraerFiltrado');
+  $group->get('/listo/', \PedidoController::class . ':TraerFiltrado');
+  $group->get('/', \PedidoController::class . ':TraerFiltrado');
 });
 
 $app->group('/guardar', function (RouteCollectorProxy $group){
@@ -62,6 +67,15 @@ $app->group('/guardar', function (RouteCollectorProxy $group){
   $group->post('/pedidos', \GuardarController::class . ':GuardarPedidos');
   $group->post('/productos', \GuardarController::class . ':GuardarProductos');
 })->add(\Logger::class . ':VerificarToken');
-//agregar middleware de logueo
+
+$app->group('/estadisticas', function (RouteCollectorProxy $group){
+  $group->post('/comentarios', \EncuestaController::class . ':TraerMejoresComentarios');
+  $group->post('/mesa', \EncuestaController::class . ':TraerMesaMasUsada');
+  $group->post('/tardios', \EncuestaController::class . ':TraerPedidosTardios');
+})->add(\Logger::class . ':VerificarToken');
+
+$app->group('/descargar', function (RouteCollectorProxy $group){
+  $group->post('/', \GuardarController::class . ':DescargarPDF');
+})->add(\Logger::class . ':VerificarToken');
 
 $app->run();

@@ -7,9 +7,8 @@ use Slim\Psr7\Response as ResponseMW;
 class PedidoController implements ApiInterface{
 
 	public function TraerTodos($request, $response, $args)
-    {
+    {      
         $array= Pedido::TraerTodos("SELECT PE.id, PR.nombre as 'Producto', PR.precio as 'Precio', PE.cantidad as 'Cantidad', M.codigo as 'CodigoMesa', PE.codigo as 'CodigoPedido', PE.estado as 'EstadoPedido', PE.tiempoAprox FROM Pedidos PE inner join Productos PR on PE.idProducto= PR.id inner join Mesas M on PE.idMesa = M.id");
-
         $retorno= json_encode(array("Todos los Pedidos"=>$array));
         $response->getBody()->write($retorno);
 
@@ -43,36 +42,35 @@ class PedidoController implements ApiInterface{
 
     public function TraerFiltrado($request, $response, $args) {
         $retorno= json_encode(array("Algo salió mal" => 404));
-        $consultaGenerica = "SELECT PE.id, PR.nombre as 'Producto', PR.precio as 'Precio', PE.cantidad as 'Cantidad' , M.codigo as 'CodigoMesa', PE.codigo as 'CodigoPedido' , PE.estado as 'EstadoPedido', PE.tiempoAprox FROM Pedidos PE inner join Productos PR on PE.idProducto = PR.id inner join Mesas M on PE.idMesa = M.id";
+        $args = $request->getQueryParams();
+        $consulta = "SELECT PE.id, PR.nombre as 'Producto', PR.precio as 'Precio', PE.cantidad as 'Cantidad' , M.codigo as 'CodigoMesa', PE.codigo as 'CodigoPedido' , PE.estado as 'EstadoPedido', PE.tiempoAprox FROM Pedidos PE inner join Productos PR on PE.idProducto = PR.id inner join Mesas M on PE.idMesa = M.id";
         if(isset($args['id']))
         {
             $usuario= Usuario::obtenerUsuario($args['id']);
-            
             switch ($usuario->rol) 
             {
                 case 'cocinero':
-                    $array = Pedido::TraerTodos($consultaGenerica + " where PR.tipo = 'comida' and PE.estado != 'Cobrado'");
+                    $consulta = $consulta . " where PR.tipo = 'comida' and PE.estado != 'Cobrado'";
                     break;
                 case 'bartender' :
-                    $array = Pedido::TraerTodos($consultaGenerica + " where PR.tipo = 'bebida' and PE.estado != 'Cobrado'");
+                    $consulta = $consulta . " where PR.tipo = 'bebida' and PE.estado != 'Cobrado'";
                     break;
                 case 'cervecero':
-                    $array = Pedido::TraerTodos($consultaGenerica + " where PR.tipo = 'cerveza' and PE.estado != 'Cobrado'");
-                    break;
-                case 'socio':
-                    $array = Pedido::TraerTodos($consultaGenerica);
+                    $consulta = $consulta . " where PR.tipo = 'cerveza' and PE.estado != 'Cobrado'";
                     break;
                 case 'mesero':
-                    $array = Pedido::TraerTodos($consultaGenerica + " where PE.estado = 'Listo'");
+                    $consulta = $consulta . " where PE.estado = 'Listo'";
                     break;
             }
+            $array = Pedido::TraerTodos($consulta);
         }
         else
         {
             $usuario = new stdClass();
-            $usuario->usuario="Cliente";
-            $array = Pedido::TraerTodos($consultaGenerica + " where M.codigo= '{$args['idMesa']}' and PE.codigo= '{$args['idPedido']}'");
-            $tiempoEsperado = Pedido::TraerTodos("SELECT MAX(PE.tiempoAprox) as 'tiempoAprox' FROM Pedidos PE inner join Productos PR on PE.idProducto = PR.id inner join Mesas M on PE.idMesa = M.id where M.codigo= '{$codigoMesa}' and PE.codigo= '{$codigoPedido}'");
+            $usuario->usuario = "Cliente";
+            $array = Pedido::TraerTodos($consulta . " where M.id= '{$args['idMesa']}' and PE.id= '{$args['idPedido']}'");
+            $tiempoEsperado = Pedido::TraerTodos("SELECT MAX(PE.tiempoAprox) as 'tiempoAprox' FROM Pedidos PE inner join Productos PR on PE.idProducto = PR.id inner join Mesas M on PE.idMesa = M.id where M.id= '{$args['idMesa']}' and PE.id= '{$args['idPedido']}'");
+            Pedido::Insertar($args['notaCocinero'], $args['notaMesero'], $args['notaMesa'], $args['notaGeneral'], $args['comentario'], $args['idMesa'], $args['idPedido']);
             $retorno = json_encode($tiempoEsperado);
             $response->getBody()->write($retorno);
         }
@@ -82,7 +80,7 @@ class PedidoController implements ApiInterface{
         return $response;
     }
 
-    public function AtenderPedido($request, $response, $args)
+    public function AtenderPedido($request, $response)
     {
         $parametros = $request->getParsedBody();
 
@@ -100,10 +98,10 @@ class PedidoController implements ApiInterface{
         $parametros = $request->getParsedBody();
         if($request->getMethod() == 'POST')
         {
-            $retorno = Pedido::TraerTodos("SELECT cantidad FROM Productos where id = {$parametros['idProd']}");
-            if($retorno["cantidad"] >= $parametros['cantidad'])
+            $pedido = Pedido::TraerTodos("SELECT cantidad FROM Productos where id = {$parametros['idProd']}");
+            if($pedido[0]['cantidad'] >= $parametros['cantidad'])
             {
-                Pedido::DescontarStock($parametros['idProd'],$retorno['cantidad']- $parametros['cantidad']);
+                Pedido::DescontarStock($parametros['idProd'],$pedido[0]['cantidad'] - $parametros['cantidad']);
                 $response = $handler->handle($request);
             }  
             else $response->getBody()->write("No hay stock ");
@@ -126,7 +124,7 @@ class PedidoController implements ApiInterface{
             Pedido::ConsultaActualizar($pedido['id'], "UPDATE Pedidos SET estado = 'Cobrado' WHERE id = :id");
         }
         
-        Pedido::ConsultaActualizar($parametros['idMesa'], "UPDATE Mesas SET estado = 'Vacia' WHERE id = :id");
+        Pedido::ConsultaActualizar($parametros['idMesa'], "UPDATE Mesas SET estado = 'Cobrado' WHERE id = :id");
         $response->getBody()->write("Total a pagar: ". $totalApagar);
         return $response;
     }

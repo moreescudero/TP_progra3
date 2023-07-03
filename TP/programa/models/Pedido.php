@@ -19,7 +19,7 @@ class Pedido{
         $this->idMesero = $idMesero;
         if($tiempo == 0)
         {
-            $this->tiempo = date("H:i");
+            $this->tiempo = "00:45";
         }
         else $this->tiempo = $tiempo;
 
@@ -55,6 +55,21 @@ class Pedido{
         }
         
         return $pedidos;
+    }
+
+    public static function Insertar($notaCocinero, $notaMesero, $notaMesa, $notaGeneral, $comentario, $idMesa, $idPedido)
+    {
+        $objAccesoDatos = AccesoDatos::obtenerInstancia();
+        $consulta = $objAccesoDatos->prepararConsulta("INSERT INTO Encuestas (notaCocinero, notaMesero, notaMesa, notaGeneral, comentario, idMesa, idPedido) VALUES (:notaCocinero, :notaMesero, :notaMesa, :notaGeneral, :comentario, :idMesa, :idPedido)");
+        $consulta->bindValue(':notaCocinero', $notaCocinero);
+        $consulta->bindValue(':notaMesero', $notaMesero);
+        $consulta->bindValue(':notaMesa', $notaMesa);
+        $consulta->bindValue(':notaGeneral', $notaGeneral);
+        $consulta->bindValue(':comentario', $comentario);
+        $consulta->bindValue(':idMesa', $idMesa);
+        $consulta->bindValue(':idPedido', $idPedido);
+        $consulta->execute();
+        
     }
 
     static function ComprobarMesa($idMesa)
@@ -97,7 +112,7 @@ class Pedido{
                 $consulta->bindValue(':id', $id, PDO::PARAM_INT);
                 break;
             case 'Listo para servir':
-                $consulta = $objAccesoDato->prepararConsulta("SELECT hora,tiempoAprox FROM Pedidos WHERE id = :id");
+                $consulta = $objAccesoDato->prepararConsulta("SELECT hora, tiempoAprox FROM Pedidos WHERE id = :id");
                 $consulta->bindValue(':id', $id, PDO::PARAM_INT);
                 $consulta->execute();
                 $retorno=$consulta->fetch(PDO::FETCH_ASSOC);

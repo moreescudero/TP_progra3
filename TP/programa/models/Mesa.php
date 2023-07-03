@@ -10,6 +10,7 @@ class Mesa{
     {
         $this->codigo = $codigo;
         $this->estado = $estado;
+        $this->id = $id;
     }
 
     static function ComprobarCodigo($codigo){ 
@@ -38,27 +39,36 @@ class Mesa{
         $mesas= array();
 
         while($fila = $consulta->fetch(PDO::FETCH_ASSOC)){
-            $mesa= new Mesa($fila['id'], $fila['codigo'], $fila['estado']);
+            $mesa= new Mesa($fila['codigo'], $fila['estado'], $fila['id']);
             array_push($mesas, $mesa);
         }
         return $mesas;
     }
 
+    public static function CerrarMesa($id){
+        $objAccesoDatos = AccesoDatos::obtenerInstancia();
+        $consulta = $objAccesoDatos->prepararConsulta("UPDATE Mesas SET estado = 'Vacia' where id = '$id'");
+        $consulta->execute();
+
+        if($consulta->rowCount() > 0)return true;
+        else return false;
+    }
+
     public static function ActualizarMesa($id){
         $objAccesoDatos = AccesoDatos::obtenerInstancia();
-        $consulta = $objAccesoDatos->prepararConsulta("SELECT pedidos.estado FROM pedidos INNER JOIN mesas on pedidos.idMesa= mesas.id where pedidos.idMesa = '$id'");
+        $consulta = $objAccesoDatos->prepararConsulta("SELECT P.estado FROM Pedidos P INNER JOIN Mesas M on P.idMesa = M.id where P.idMesa = '$id'");
         $consulta->execute();
-        $flag=false;
+        $flag = false;
         
-        while($mesa= $consulta->fetch(PDO::FETCH_ASSOC)){
-            if($mesa['estado']!= "Listo"){
+        while($pedido = $consulta->fetch(PDO::FETCH_ASSOC)){
+            if($pedido['estado'] != "Listo para servir"){
                 $flag= true;
                 break;
             }
         }
         if(!$flag) {
             $objAccesoDatos = AccesoDatos::obtenerInstancia();
-            $consulta = $objAccesoDatos->prepararConsulta("UPDATE Mesas SET estado= 'Comiendo' where id = '$id'");
+            $consulta = $objAccesoDatos->prepararConsulta("UPDATE Mesas SET estado = 'Comiendo' where id = '$id'");
             $consulta->execute();
             return true;
         }
